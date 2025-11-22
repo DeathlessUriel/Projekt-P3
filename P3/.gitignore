@@ -1,0 +1,47 @@
+# Build results
+bin/
+obj/
+out/
+
+# Debug / release folders (czasem IDE tworzy)
+Debug/
+Release/
+
+# VS Code settings
+.vscode/
+
+# User-specific files
+*.user
+*.userosscache
+*.suo
+*.userprefs
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# MacOS / Linux junk
+.DS_Store
+Thumbs.db
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# NuGet
+*.nupkg
+packages/
+
+# DotNet
+project.lock.json
+project.fragment.lock.json
+
+# ASP.NET generowane (jakbyś kiedyś przeniósł projekt)
+wwwroot/
+
+# JSON save file from your game
+save.json
