@@ -11,6 +11,9 @@ namespace TextRpg
         private readonly LootGenerator _lootGenerator = new LootGenerator();
         private readonly Shop _shop = new Shop();
 
+        private IEncounterGenerator _encounterGenerator;
+        private EnemyFactory _enemyFactory;
+
         // ────────────────────────────────────────────────
         // Pomocnicza metoda koloru
         // ────────────────────────────────────────────────
@@ -40,7 +43,7 @@ namespace TextRpg
 
             if (mode == "2")
             {
-                var loaded = SaveSystem.Load();
+                var loaded = SaveManager.Load();
                 if (loaded != null)
                 {
                     _player = loaded;
@@ -93,7 +96,7 @@ namespace TextRpg
                     case "2": ShowStats(); break;
                     case "3": InventoryMenu(); break;
                     case "4": _shop.Enter(_player); break;
-                    case "5": SaveSystem.Save(_player); break;
+                    case "5": SaveManager.Save(_player); break;
                     case "6": _running = false; break;
                     default:
                         CWrite("Nieznana komenda.", ConsoleColor.Red);
@@ -200,9 +203,21 @@ namespace TextRpg
         // ────────────────────────────────────────────────
         private void Explore()
         {
-            CWrite("\nWyruszasz na eksplorację...", ConsoleColor.Cyan);
+            _enemyFactory = new EnemyFactory();
 
-            var encounter = Encounter.Generate(_lootGenerator);
+// rejestracja przeciwników z wagami
+_enemyFactory.Register(() => new Goblin(), 0.40);
+_enemyFactory.Register(() => new Wolf(),   0.25);
+_enemyFactory.Register(() => new Bandit(), 0.20);
+_enemyFactory.Register(() => new Orc(),    0.15);
+
+_encounterGenerator = new EncounterGenerator(_enemyFactory, _lootGenerator);
+
+            CWrite("\nWyruszasz na eksplorację...", ConsoleColor.Cyan);
+            
+
+           var encounter = _encounterGenerator.Generate();
+
             CWrite(encounter.Description, ConsoleColor.White);
 
             if (encounter.Type == EncounterType.Empty)
