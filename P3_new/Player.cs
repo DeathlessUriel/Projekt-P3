@@ -5,149 +5,45 @@ namespace TextRpg
     [Serializable]
     public class Player
     {
-        public string Name { get; set; }
-        public int HP { get; private set; }
-        public int MaxHP { get; private set; }
-        public int BaseAttack { get; private set; }
+        public string Name { get; }
 
-        public Inventory Inventory { get; private set; } = new Inventory(12);
+        public PlayerStats Stats { get; }
+        public PlayerCombat Combat { get; }
+        public PlayerInventory InventoryManager { get; }
 
-        public int Gold { get; set; } = 0;
+        public int Gold { get; set; }
 
-        public int Level { get; private set; } = 1;
-        public int XP { get; private set; } = 0;
-
-        public Weapon? EquippedWeapon { get; private set; }
-
-        public bool IsAlive => HP > 0;
+        public bool IsAlive => Stats.HP > 0;
 
         public Player(string name)
         {
             Name = name;
 
-            MaxHP = 30;
-            HP = MaxHP;
-            BaseAttack = 3;
+            Stats = new PlayerStats();
+            Combat = new PlayerCombat(this);
+            InventoryManager = new PlayerInventory(this);
         }
 
-        // ────────────────────────────────────────────────
-        // Atak gracza — broń zwykła / zaawansowana lub brak broni
-        // ────────────────────────────────────────────────
-        public int Attack()
-        {
-            if (EquippedWeapon != null)
-            {
-                // advanced weapon
-                if (EquippedWeapon is AdvancedWeapon aw)
-                {
-                    if (Level < aw.RequiredLevel)
-                    {
-                        Console.WriteLine($"Poziom za niski, aby użyć {aw.Name}. Używasz ataku podstawowego.");
-                        return BaseAttack + Utils.RNG.Next(0, 3);
-                    }
+        // ───── delegaty (kompatybilność wsteczna) ─────
 
-                    return aw.RollDamage(BaseAttack);
-                }
-                else
-                {
-                    // zwykła broń
-                    return BaseAttack + EquippedWeapon.Damage + Utils.RNG.Next(0, 3);
-                }
-            }
+        public int HP => Stats.HP;
+        public int MaxHP => Stats.MaxHP;
+        public int Level => Stats.Level;
+        public int XP => Stats.XP;
+        
+        public int BaseAttack => Stats.BaseAttack;
 
-            // bez broni
-            return BaseAttack + Utils.RNG.Next(0, 3);
-        }
+        public Weapon? EquippedWeapon => Combat.EquippedWeapon;
+        public Inventory Inventory => InventoryManager.Inventory;
 
-        // ────────────────────────────────────────────────
-        // Wyposażanie broni
-        // ────────────────────────────────────────────────
-        public void EquipWeapon(Weapon weapon)
-        {
-            if (!Inventory.Items.Contains(weapon))
-            {
-                Console.WriteLine("Nie masz tej broni w ekwipunku.");
-                return;
-            }
+        public int Attack() => Combat.Attack();
+        public void TakeDamage(int dmg) => Stats.TakeDamage(dmg);
+        public void Heal(int amount) => Stats.Heal(amount);
 
-            if (weapon is AdvancedWeapon aw)
-            {
-                if (Level < aw.RequiredLevel)
-                {
-                    Console.WriteLine(
-                        $"Poziom {Level} jest za niski, wymagana jest {aw.RequiredLevel} aby używać {aw.Name}."
-                    );
-                    return;
-                }
-            }
+        public void GainXP(int xp) => Stats.GainXP(xp);
+        public void EquipWeapon(Weapon weapon) => Combat.EquipWeapon(weapon);
 
-            EquippedWeapon = weapon;
-            Console.WriteLine($"Wyposażono: {weapon.Name}");
-        }
-
-        public void TakeDamage(int dmg)
-        {
-            HP -= dmg;
-            if (HP < 0) HP = 0;
-        }
-
-        public void Heal(int amount)
-        {
-            HP += amount;
-            if (HP > MaxHP) HP = MaxHP;
-        }
-
-        // ────────────────────────────────────────────────
-        // Dodawanie przedmiotu
-        // ────────────────────────────────────────────────
-        public void AddItem(Item item)
-        {
-            if (Inventory.Add(item))
-            {
-                if (item is AdvancedWeapon aw)
-                    Console.WriteLine($"Dodano broń {aw.Name} (+{aw.Damage})");
-                else if (item is Weapon w)
-                    Console.WriteLine($"Dodano broń {w.Name} (+{w.Damage})");
-                else
-                    Console.WriteLine($"Dodano przedmiot: {item.Name}");
-            }
-        }
-
-        // ────────────────────────────────────────────────
-        // System doświadczenia / levelowania
-        // ────────────────────────────────────────────────
-        public void GainXP(int amount)
-        {
-            XP += amount;
-            Console.WriteLine($"Zdobywasz {amount} XP.");
-
-            var needed = XPToLevelUp();
-
-            while (XP >= needed)
-            {
-                XP -= needed;
-                LevelUp();
-                needed = XPToLevelUp();
-            }
-        }
-
-        private int XPToLevelUp()
-            => 10 + Level * 5;
-
-        private void LevelUp()
-        {
-            Level++;
-            MaxHP += 5;
-            HP = MaxHP;
-            BaseAttack += 1;
-
-            Console.WriteLine($"Awansujesz na poziom {Level}! HP i siła wzrastają.");
-        }
-
-        // pomocnicze — usuwanie przedmiotu (np. mikstura po użyciu)
-        public void RemoveItem(Item item)
-        {
-            Inventory.Remove(item);
-        }
+        public void AddItem(Item item) => InventoryManager.AddItem(item);
+        public void RemoveItem(Item item) => InventoryManager.RemoveItem(item);
     }
 }
